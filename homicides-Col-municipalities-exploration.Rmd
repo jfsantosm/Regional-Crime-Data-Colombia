@@ -1,0 +1,107 @@
+---
+title: "homicides-Col-municipalitites-Exploration"
+output: 
+  html_notebook:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 4
+    number_sections: true
+    code_folding: "hide"
+    theme: "cosmo"
+    highlight: "monochrome"
+---
+
+
+```{r setup}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(tidyverse)
+library(summarytools)
+library(xtable)
+library(knitr)
+library(ExPanDaR)
+library(plotly)
+library(REAT)
+library(DT)
+
+# Change the presentation of decimal numbers to 4 and avoid scientific notation
+options(prompt="R> ", digits=2, scipen=999)
+```
+
+
+
+# Import the data
+
+Via the `tidyverse` package
+
+ using the code because the name of the municipalities is in spanish "locale = locale(encoding = "ISO-8859-1") "
+ 
+ 
+```{r}
+dat <- read_csv("homicides_Col_municipalities_2010_18.csv",    locale = locale(encoding = "ISO-8859-1"))
+dat
+View(dat)
+
+```
+
+Use the package `DT` to present the data frame in an interactive way
+
+```{r}
+dat %>% 
+  datatable(filter = "top") %>%
+  formatRound(colnames(dat), 2) 
+```
+
+
+
+# Decribe data
+
+Use the package `summarytools` to describe the data
+
+```{r}
+print(dfSummary(dat), method = "render")
+```
+
+## Identify missing values
+
+
+```{r}
+prepare_missing_values_graph(dat_hr, ts_id = "year")
+```
+
+# Explore data
+
+Use the package `ExPanDaR` to explore panel data. However, to use it, we first need to reshape the dataset and make it long form. 
+
+```{r}
+dat_hr <- dat %>%
+  select(DPMP, starts_with("hr")) %>% 
+  gather(hryear, hrate, hrate10:hrate18) %>% 
+  mutate(year= 2000+ as.integer(substr(hryear,6,7))) %>%
+  select(1,4,3)
+
+dat_hr
+```
+
+
+## Plot: Dispersion dynamics
+
+
+```{r}
+
+
+graph3 <- prepare_quantile_trend_graph(dat_hr, ts_id = "year", quantiles = c(0.01, 0.05, 0.1,0.2, 0.25, 0.5, 0.75, 0.95), var = "hrate")
+graph3$plot
+
+```
+
+## Plot: overall trend
+
+```{r}
+graph1 <- prepare_trend_graph(dat_hr, ts_id = "year", "hrate")
+graph1$plot
+```
+
+
+
